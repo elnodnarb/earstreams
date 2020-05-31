@@ -53,36 +53,47 @@ totalplaytime <- function(data){
 
 ## Windowed Playtime
 # start and end should be "year.mo" strings
-start <- 201909
-end <- 201911
-data[which(data$year.mo>=201909&data$year.mo<=201911),]
-
-slice.playtime <- function(data,start,end){
+playtime <- function(data,start,end){
   temp <- data[which(data$year.mo>=start&data$year.mo<=end),"msPlayed"]
   ms <- sum(temp)
   hours <- ms/(1000*60*60)
   days <- hours/24
-  return(cat("Playtime from: ",start, " ", end, "\n",
+  return(cat("Playtime from: ",start, " to ", end, "\n",
              ms, " milliseconds \n",
              hours, " hours \n",
              days, " days \n"))
 }
 
+## Monthly Summaries
+monthlyPlaytime <- function(data){
+  temp <- data %>% group_by(year.mo) %>% 
+    summarize(mo.playtime=sum(msPlayed)) %>% mutate(mo.playtime=mo.playtime/(1000*60*60))
+  colnames(temp) <- c("Month","Hours Listened")
+  return(temp)
+}
+monthlyPlaytime(data)
+#mean(data[which(data$year.mo==201905),"msPlayed"])
 
 ### Apply Functions
 uniqArtistsTracks(data)
 totalplaytime(data)
-slice.playtime(data,201909,201911)
-slice.playtime(data,202003,202005)
+playtime(data,201909,201911)
+playtime(data,202003,202005)
+playtime(data,201912,202002) # 3 mo pre-quarantine
+playtime(data,201906,202002)  # all non-quarantine listening
+playtime(data,202003,202005)  # 3 mo quarantine listening
+monthlyPlaytime(data)
 
 ### Summarizing data
-
-
 ### Plots
-data$year.mo <- paste0(data$year,data$month)
-#plot <- ggplot(data, aes(data$year.mo,msPlayed)) +
-ggplot(data, aes(year.mo,msPlayed/(1000*60*60))) + geom_violin()
-  
+temp <- data %>% group_by(year.mo) %>% 
+  summarize(mo.playtime=sum(msPlayed)) %>% mutate(mo.playtime=mo.playtime/(1000*60*60))
+temp.plot <- ggplot(temp,aes(x=as.factor(year.mo),mo.playtime,fill=as.factor(year.mo))) +
+  geom_col() + 
+  theme(legend.position="none") +
+  labs(x="months",y="playtime (hr)",title="Playtime by Month")
+temp.plot
+
 # myfunction <- function(arg1, arg2, ... ){
 #   statements
 #   return(object)
